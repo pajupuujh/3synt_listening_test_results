@@ -135,7 +135,7 @@ wilcox$.y. <- tr2jax(wilcox$.y.)
 knitr::kable(wilcox,row.names = F)
 ```
 ### Full EGEMAPS
-```{r full_egemaps, fig.height=42, fig.width = 7, eval=F }
+```{r full_egemaps, fig.height=42, fig.width = 7, eval=T }
 
 d <- egemaps.long
 vars <- levels(d$variable)
@@ -151,7 +151,7 @@ print(boxes(d))
 ```
 
 #### Wilcox test
-```{r full_wilcox, eval=F}
+```{r full_wilcox, eval=T}
 wilcox <- ldply(vars[kws.order], w, data = egemaps.scaled)
 wilcox$.y. <- tr2jax(wilcox$.y.)
 knitr::kable(wilcox,row.names = F)

@@ -1,1 +1,158 @@
-../descriptive.Rmd
+---
+title: "Compare 3 synthesizers"
+author: "EKI"
+date: "Dec 30, 2021"
+output: html_document
+---
+
+```{r setup, tidy=FALSE,cache=FALSE,include=FALSE}
+options(warn=-1)
+knitr::opts_chunk$set(echo = TRUE, dev="png", dev.dpi=300, fig.height=6, fig.width=6, cache=FALSE)
+source("base.R")
+
+```
+## Load data
+```{r read data}
+source("data.R")
+```
+## Scores
+### Mean score by synth+corpus
+```{r}
+scores[,.(score=mean(score)), by=speaker_name][order(-score)]
+```
+### Mean score for individual WAVs
+```{r}
+scores[,.(score=mean(score)), by=speaker_wav][order(-score)]
+```
+
+### Intraclass Correlations for raters
+
+```{r ICC_calculate}
+d <- dcast(scores,"speaker_wav ~ rater", value.var = "score")[,-c(1)]
+ICC(setDF(d), missing = F)
+```
+
+### Score boxplot
+```{r}
+colors <- c("#61707d", "#c1d82f", "#c1d2de",
+            "#61707d", "#c1d82f", "#c1d2de",
+            "#61707d", "#c1d82f", "#c1d2de"
+)
+scores$style <- substring(scores$speaker_name, 2)
+print(ggplot(scores,
+  aes(x=speaker_name, y=score, colour=speaker_name, fill=speaker_name)) +
+  geom_boxplot(notch=TRUE) +
+  guides(fill=FALSE)+
+  xlab("Speaker")+
+  scale_color_manual(values=colors)+
+  scale_fill_manual(values=colors)+
+  theme(legend.position = "none")+
+  theme(panel.border = element_blank())
+)
+```
+
+
+
+```{r}
+knitr::kable(t_test(scores, score ~ speaker_name))
+
+```
+```{r "text stats"}
+narr <- fread("NARR.csv", header = F)
+neu <- fread("NEU.csv", header = F)
+char <- fread("CHAR.csv", header = F)
+narr$style <- "NARR"
+neu$style <- "NEU"
+char$style <- "CHAR"
+counts <- rbind(narr, neu, char)
+colnames(counts) <- c("words", "chars", "file", "style")
+```
+## Corpora
+### Sentence size quantiles
+```{r}
+knitr::kable(counts[, as.list(quantile(words)), by=style])
+```
+### Sentence size distribution
+```{r}
+colors <- c("#61707d", "#c1d2de", "#c1d82f")
+ggboxplot(counts, x = "style", y = "words",
+          add=c("median_q1q3","point", "jitter"),
+          add.params=list(size=0.1), color = "style",
+          palette = colors, legend = "none")+
+        ylim(NA,50)+
+        theme(
+                plot.title = element_text(face = "bold", size = 12, hjust = 0,  margin = margin(t = 10, b = 10)),
+                legend.background = element_rect(fill = "white", size = 4, colour = "white"),
+                axis.ticks = element_line(colour = "grey70", size = 0.2),
+                panel.grid.major = element_line(colour = "grey70", size = 0.2),
+                panel.grid.minor = element_blank(),
+                axis.line=element_blank()
+                #,axis.ticks=element_blank()
+        ) +
+        stat_compare_means(label = "p.signif", comparisons = list(c("NARR","NEU"), c("NARR", "CHAR"), c("NEU", "CHAR")), label.y=c(34,42,38))
+
+```
+
+## EGEMAPS
+```{r}
+boxes <- function(data) {
+
+  nature <- c("#c1d82f","#61707d","#c1d2de")
+  ggplot(data, aes(x = value, y = variable, color = style, fill = style)) +
+          geom_boxplot(notch = TRUE, outlier.shape = NA) +
+          scale_x_continuous(limits = c(-2.5, 2.5)) +
+          scale_y_discrete(labels = tr(levels(d$variable))) +
+          scale_color_manual(values = nature) + # revert colors to pair calm and likable
+          scale_fill_manual(values = nature) +
+          theme(panel.border = element_blank()) +
+          labs( #subtitle = title,
+                  x = expression(value[norm]),
+                  y = NULL,
+                  color = "Style",
+                  fill = "Style")
+}
+
+kw <- function(var, data) {
+  kruskal_test(data, reformulate("style", var))
+}
+
+w <- function(var, data) {
+  wilcox_test(data, reformulate("style", var))
+}
+```
+### EGEMAPS favorites
+```{r small_egemaps}
+d <- egemaps.long
+setkey(d, variable)
+d <- d[params]
+d$variable <- factor(d$variable, levels = rev(params))
+print(boxes(d))
+```
+
+```{r small_wilcox}
+wilcox <- ldply(rev(levels(d$variable)), w, data = egemaps.scaled)
+wilcox$.y. <- tr2jax(wilcox$.y.)
+knitr::kable(wilcox,row.names = F)
+```
+### Full EGEMAPS
+```{r full_egemaps, fig.height=42, fig.width = 7, eval=F }
+
+d <- egemaps.long
+vars <- levels(d$variable)
+
+kws <- ldply(vars, kw, data = egemaps.scaled)
+kws.order <- order(-kws$statistic,kws$p)
+kws$.y. <- tr2jax(kws$.y.)
+knitr::kable(kws[kws.order,1:5],row.names = F)
+
+# boxplot draws in reverse order
+d$variable <- factor(d$variable, levels = vars[rev(kws.order)])
+print(boxes(d))
+```
+
+#### Wilcox test
+```{r full_wilcox, eval=F}
+wilcox <- ldply(vars[kws.order], w, data = egemaps.scaled)
+wilcox$.y. <- tr2jax(wilcox$.y.)
+knitr::kable(wilcox,row.names = F)
+```

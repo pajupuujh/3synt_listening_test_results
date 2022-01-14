@@ -2,12 +2,12 @@
 title: "Compare 3 synthesizers"
 author: "EKI"
 date: "Dec 30, 2021"
-output: html_document
+output: md_document
 ---
 
 ```{r setup, tidy=FALSE,cache=FALSE,include=FALSE}
 options(warn=-1)
-knitr::opts_chunk$set(echo = TRUE, dev="png", dev.dpi=300, fig.height=6, fig.width=6, cache=FALSE)
+knitr::opts_chunk$set(echo = TRUE, dev="pdf", dev.dpi=300, fig.height=6, fig.width=6, cache=FALSE)
 source("base.R")
 
 ```
@@ -47,7 +47,10 @@ print(ggplot(scores,
   scale_color_manual(values=colors)+
   scale_fill_manual(values=colors)+
   theme(legend.position = "none")+
-  theme(panel.border = element_blank())
+  theme(
+    panel.border = element_blank(),
+    axis.text.x = element_text(angle = 30, hjust = 1, vjust = 1)
+  )
 )
 ```
 
@@ -81,12 +84,13 @@ ggboxplot(counts, x = "style", y = "words",
           palette = colors, legend = "none")+
         ylim(NA,50)+
         theme(
-                plot.title = element_text(face = "bold", size = 12, hjust = 0,  margin = margin(t = 10, b = 10)),
                 legend.background = element_rect(fill = "white", size = 4, colour = "white"),
                 axis.ticks = element_line(colour = "grey70", size = 0.2),
                 panel.grid.major = element_line(colour = "grey70", size = 0.2),
                 panel.grid.minor = element_blank(),
-                axis.line=element_blank()
+                axis.line=element_blank(),
+                axis.text = element_text(size = rel(0.8), colour = "black"),
+                axis.title = element_text(size = rel(1.0), colour = "black")
                 #,axis.ticks=element_blank()
         ) +
         stat_compare_means(label = "p.signif", comparisons = list(c("NARR","NEU"), c("NARR", "CHAR"), c("NEU", "CHAR")), label.y=c(34,42,38))
@@ -151,7 +155,7 @@ print(boxes(d))
 ```
 
 #### Wilcox test
-```{r full_wilcox, eval=T}
+```{r full_wilcox, eval=F}
 wilcox <- ldply(vars[kws.order], w, data = egemaps.scaled)
 wilcox$.y. <- tr2jax(wilcox$.y.)
 knitr::kable(wilcox,row.names = F)

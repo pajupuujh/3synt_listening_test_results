@@ -27,7 +27,11 @@ tr <- function (var) {str2expression(tr.vec[var])}
 tr.jax <- d$mathjax
 names(tr.jax) <- d$var
 tr2jax <- function (var) {tr.jax[var]}
+
+
 # Load data
+
+
 egemaps <- fread( "egemaps.csv", stringsAsFactors = TRUE, drop = "frameTime")
 
 ## Normalize acoustic parameters
@@ -35,6 +39,11 @@ egemaps.start <- 3
 l <- length(names(egemaps))
 egemaps.vars <- names(egemaps)[egemaps.start:l]
 egemaps.scaled <- cbind(egemaps[, 1:(egemaps.start-1)], scale(egemaps[, egemaps.start:l]) )
+
+
+liisi.egemaps <- fread( "liisi.csv", stringsAsFactors = TRUE, drop = "frameTime")
+liisi.egemaps.scaled <- cbind(liisi.egemaps[, 1:(egemaps.start-1)], scale(liisi.egemaps[, egemaps.start:l]) )
+
 
 #fixme unused
 effect_size <- function(var, data) {
@@ -54,11 +63,10 @@ sort_by_effect <- function(data) {
 }
 
 egemaps.long <- sort_by_effect(egemaps.scaled)
+liisi.egemaps.long <- sort_by_effect(liisi.egemaps.scaled)
 
 params <- c(
-  "spectralFlux_sma3_amean",
   "MeanVoicedSegmentLengthSec",
-  "MeanUnvoicedSegmentLength",
   "VoicedSegmentsPerSec",
   "loudnessPeaksPerSec",
   "loudness_sma3_amean",
@@ -66,7 +74,5 @@ params <- c(
   "loudness_sma3_meanFallingSlope",
   "HNRdBACF_sma3nz_amean",
   "alphaRatioV_sma3nz_amean",
-  "alphaRatioUV_sma3nz_amean",
-  "slopeV0.500_sma3nz_amean",
-  "slopeUV0.500_sma3nz_amean"
+  "slopeV0.500_sma3nz_amean"
 )
